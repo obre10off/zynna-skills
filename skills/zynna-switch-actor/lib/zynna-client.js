@@ -1,0 +1,77 @@
+const { getZynnaConfig } = require('./config');
+
+class ZynnaOpenSkillsClient {
+  constructor(cfg) {
+    this.cfg = cfg;
+  }
+
+  async requestJson(method, url, { body, timeoutSec = 60 } = {}) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.max(1, timeoutSec) * 1000);
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${this.cfg.openSkillsKey}`,
+          Accept: 'application/json',
+          ...(body ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+
+      const text = await response.text();
+      let payload;
+      try {
+        payload = JSON.parse(text);
+      } catch (error) {
+        throw new Error(`Invalid JSON response: ${error}\nBody: ${text.slice(0, 500)}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} calling ${url}. Body: ${text.slice(0, 500)}`);
+      }
+
+      return payload;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async submitSwitchActorTask(taskBody, timeoutSec = 120) {
+    const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/switch-actor/tasks`, {
+      body: taskBody,
+      timeoutSec,
+    });
+
+    if (payload.code !== 0) {
+      throw new Error(`Zynna switch actor submit failed: ${JSON.stringify(payload)}`);
+    }
+
+    return payload.data || {};
+  }
+
+  async getSwitchActorTaskStatus(taskId, timeoutSec = 60) {
+    const payload = await this.requestJson(
+      'GET',
+      `${this.cfg.baseUrl}/api/open/skills/switch-actor/tasks/status?task_id=${encodeURIComponent(taskId)}`,
+      { timeoutSec }
+    );
+
+    if (payload.code !== 0) {
+      throw new Error(`Zynna switch actor status failed: ${JSON.stringify(payload)}`);
+    }
+
+    return payload.data || {};
+  }
+}
+
+function defaultClient() {
+  return new ZynnaOpenSkillsClient(getZynnaConfig());
+}
+
+module.exports = {
+  ZynnaOpenSkillsClient,
+  defaultClient,
+};
