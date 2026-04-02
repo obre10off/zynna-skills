@@ -17,6 +17,8 @@ const { runRecreateVideo } = require('../zynna-recreate-video/lib/recreate-video
 const { runGenerateVideo, runGenerateVideoStatus } = require('../zynna-generate-video/lib/generate-video');
 const { runSceneBuilder, runSceneBuilderStatus } = require('../zynna-scene-builder/lib/scene-builder');
 const { runSwitchActor, runSwitchActorStatus } = require('../zynna-switch-actor/lib/switch-actor');
+const { artifactsForRun } = require('../zynna-analyze-video/lib/artifacts');
+const { getZynnaConfig } = require('../zynna-analyze-video/lib/config');
 
 class FakeClient {
   async analyze() {
@@ -212,4 +214,35 @@ test('zynna-switch-actor writes result and supports status lookup', async () => 
 
   assert.equal(statusResult.videoUrl, 'https://example.com/switch-output.mp4');
   cleanup([runDir, statusRunDir]);
+});
+
+test('artifact helper rejects unsafe run_id traversal', () => {
+  assert.throws(
+    () => artifactsForRun(ANALYZE_SKILL_DIR, '../escape'),
+    /Invalid run_id/
+  );
+});
+
+test('runtime config blocks insecure non-local HTTP by default', () => {
+  const prevBase = process.env.ZYNNA_BASE_URL;
+  const prevKey = process.env.ZYNNA_SKILLS_API_KEY;
+  const prevInsecure = process.env.ZYNNA_ALLOW_INSECURE_HTTP;
+
+  try {
+    process.env.ZYNNA_BASE_URL = 'http://example.com';
+    process.env.ZYNNA_SKILLS_API_KEY = 'test-key';
+    delete process.env.ZYNNA_ALLOW_INSECURE_HTTP;
+    assert.throws(() => getZynnaConfig(), /Refusing insecure non-local HTTP URL/);
+
+    process.env.ZYNNA_ALLOW_INSECURE_HTTP = '1';
+    const cfg = getZynnaConfig();
+    assert.equal(cfg.baseUrl, 'http://example.com');
+  } finally {
+    if (prevBase === undefined) delete process.env.ZYNNA_BASE_URL;
+    else process.env.ZYNNA_BASE_URL = prevBase;
+    if (prevKey === undefined) delete process.env.ZYNNA_SKILLS_API_KEY;
+    else process.env.ZYNNA_SKILLS_API_KEY = prevKey;
+    if (prevInsecure === undefined) delete process.env.ZYNNA_ALLOW_INSECURE_HTTP;
+    else process.env.ZYNNA_ALLOW_INSECURE_HTTP = prevInsecure;
+  }
 });
