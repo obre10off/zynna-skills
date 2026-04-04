@@ -56,13 +56,13 @@ function parseArgs(argv) {
 }
 
 async function confirmRun(args) {
-  console.log('About to start Switch Actor via Zynna Open Skills.');
+  console.log('About to start Character Swap via Zynna Open Skills.');
   console.log(`- aspect_ratio: ${args.aspectRatio}`);
   console.log(`- resolution: ${args.resolution}`);
   console.log(`- actor_name: ${args.actorName || '(none)'}`);
   const rl = readline.createInterface({ input: stdin, output: stdout });
   try {
-    const answer = (await rl.question('Confirm to start switch-actor? (yes/no): ')).trim().toLowerCase();
+    const answer = (await rl.question('Confirm to start Character Swap? (yes/no): ')).trim().toLowerCase();
     return answer === 'y' || answer === 'yes';
   } finally {
     rl.close();

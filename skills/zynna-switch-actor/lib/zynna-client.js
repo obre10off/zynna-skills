@@ -87,6 +87,16 @@ class ZynnaOpenSkillsClient {
     return payload.data || {};
   }
 
+  async estimateSwitchActorTask(taskBody, timeoutSec = 120) {
+    const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/switch-actor/tasks/estimate`, {
+      body: taskBody,
+      timeoutSec,
+    });
+
+    this.assertApiSuccess(payload, 'switch actor estimate');
+    return payload.data || {};
+  }
+
   async getSwitchActorTaskStatus(taskId, timeoutSec = 60) {
     const payload = await this.requestJson(
       'GET',

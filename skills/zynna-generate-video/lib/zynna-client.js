@@ -95,6 +95,15 @@ class ZynnaOpenSkillsClient {
     return payload.data || {};
   }
 
+  async estimateTask(prompt, ratio, model, timeoutSec = 60) {
+    const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/tasks/estimate`, {
+      body: { prompt, ratio, model },
+      timeoutSec,
+    });
+    this.assertApiSuccess(payload, 'task estimate');
+    return payload.data || {};
+  }
+
   async getTaskStatus(taskId) {
     const payload = await this.requestJson(
       'GET',

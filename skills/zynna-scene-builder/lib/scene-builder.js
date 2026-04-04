@@ -1,18 +1,31 @@
 const { artifactsForRun } = require('./artifacts');
 const { defaultClient } = require('./zynna-client');
 
-function buildResult({ runId, taskId, status, outputUrl = null, raw = null, error = null }) {
+function buildResult({
+  runId,
+  taskId,
+  status,
+  outputUrl = null,
+  estimatedCredits = null,
+  chargedCredits = null,
+  creditsRefunded = false,
+  raw = null,
+  error = null,
+}) {
   return {
     run_id: runId,
     task_id: taskId ? String(taskId) : null,
     status,
     output_url: outputUrl,
+    estimated_credits: estimatedCredits,
+    charged_credits: chargedCredits,
+    credits_refunded: creditsRefunded,
     raw,
     error,
   };
 }
 
-function persistArtifacts(artifacts, result, title = 'Scene Builder Result') {
+function persistArtifacts(artifacts, result, title = 'Story Scenes Result') {
   artifacts.writeJson('outputs/result.json', result);
   artifacts.writeText(
     'outputs/result.md',
@@ -23,6 +36,9 @@ function persistArtifacts(artifacts, result, title = 'Scene Builder Result') {
       `- task_id: \`${result.task_id || '(missing)'}\``,
       `- status: \`${result.status}\``,
       `- output_url: ${result.output_url || '(missing)'}`,
+      `- estimated_credits: ${result.estimated_credits == null ? '(unknown)' : result.estimated_credits}`,
+      `- charged_credits: ${result.charged_credits == null ? '(unknown)' : result.charged_credits}`,
+      `- credits_refunded: ${result.credits_refunded ? 'yes' : 'no'}`,
       `- error: ${result.error && result.error.message ? result.error.message : '(none)'}`,
       '',
     ].join('\n'),
@@ -67,19 +83,23 @@ async function runSceneBuilder({
   const artifacts = artifactsForRun(skillDir, runId);
   artifacts.ensure();
 
-  artifacts.writeJson('input/request.json', {
+  const requestPayload = {
     name,
     scenes,
     user_id: userId,
     auto_generate: autoGenerate,
+  };
+  const estimate = await client.estimateSceneBuilderTask(requestPayload);
+  if (typeof estimate.estimated_credits !== 'number' || Number.isNaN(estimate.estimated_credits)) {
+    throw new Error(`Estimate failed or invalid estimated_credits: ${JSON.stringify(estimate)}`);
+  }
+
+  artifacts.writeJson('input/request.json', {
+    ...requestPayload,
+    estimate,
   });
 
-  const submit = await client.submitSceneBuilderTask({
-    name,
-    scenes,
-    user_id: userId,
-    auto_generate: autoGenerate,
-  });
+  const submit = await client.submitSceneBuilderTask(requestPayload);
 
   const taskId = submit.task_id;
   if (!taskId) {
@@ -91,9 +111,11 @@ async function runSceneBuilder({
     taskId,
     status: String(submit.status || 'queued'),
     outputUrl: submit.result?.output_url || null,
+    estimatedCredits: estimate.estimated_credits ?? null,
+    chargedCredits: submit.credits_used ?? null,
     raw: { submit },
   });
-  persistArtifacts(artifacts, initial, 'Scene Builder Submit');
+  persistArtifacts(artifacts, initial, 'Story Scenes Submit');
 
   if (!autoGenerate) {
     return {
@@ -101,6 +123,8 @@ async function runSceneBuilder({
       taskId: String(taskId),
       status: initial.status,
       outputUrl: initial.output_url,
+      estimatedCredits: initial.estimated_credits,
+      chargedCredits: initial.charged_credits,
       artifactsDir: artifacts.root,
     };
   }
@@ -112,6 +136,9 @@ async function runSceneBuilder({
       taskId: String(taskId),
       status: String(raw.status || ''),
       outputUrl: raw.result && typeof raw.result === 'object' ? raw.result.output_url || null : null,
+      estimatedCredits: estimate.estimated_credits ?? null,
+      chargedCredits: raw.credits_used ?? submit.credits_used ?? null,
+      creditsRefunded: Boolean(raw.credits_refunded),
       raw: { submit, status: raw },
       error: raw.error && typeof raw.error === 'object' ? { message: raw.error.message || String(raw.error) } : null,
     });
@@ -123,6 +150,8 @@ async function runSceneBuilder({
       taskId: String(taskId),
       status: final.status,
       outputUrl: final.output_url,
+      estimatedCredits: final.estimated_credits,
+      chargedCredits: final.charged_credits,
       artifactsDir: artifacts.root,
     };
   } catch (error) {
@@ -130,6 +159,8 @@ async function runSceneBuilder({
       runId,
       taskId: String(taskId),
       status: 'failed',
+      estimatedCredits: estimate.estimated_credits ?? null,
+      chargedCredits: submit.credits_used ?? null,
       raw: { submit },
       error: { message: error instanceof Error ? error.message : String(error) },
     });
@@ -159,11 +190,13 @@ async function runSceneBuilderStatus({
     taskId: String(taskId),
     status: String(raw.status || ''),
     outputUrl: raw.result && typeof raw.result === 'object' ? raw.result.output_url || null : null,
+    chargedCredits: raw.credits_used ?? null,
+    creditsRefunded: Boolean(raw.credits_refunded),
     raw,
     error: raw.error && typeof raw.error === 'object' ? { message: raw.error.message || String(raw.error) } : null,
   });
 
-  persistArtifacts(artifacts, result, 'Scene Builder Status');
+  persistArtifacts(artifacts, result, 'Story Scenes Status');
 
   return {
     runId,

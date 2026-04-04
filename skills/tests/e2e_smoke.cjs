@@ -50,6 +50,10 @@ class FakeClient {
     return { task_id: 'task_123', status: 'queued' };
   }
 
+  async estimateTask() {
+    return { estimated_credits: 4.2, available_credits: 100 };
+  }
+
   async getTaskStatus() {
     return {
       task_id: 'task_123',
@@ -64,6 +68,10 @@ class FakeClient {
     return { task_id: 'scene_task_1', status: 'queued' };
   }
 
+  async estimateSceneBuilderTask() {
+    return { estimated_credits: 6.5, available_credits: 100 };
+  }
+
   async getSceneBuilderTaskStatus() {
     return {
       task_id: 'scene_task_1',
@@ -76,6 +84,10 @@ class FakeClient {
 
   async submitSwitchActorTask() {
     return { task_id: 'switch_task_1', status: 'queued' };
+  }
+
+  async estimateSwitchActorTask() {
+    return { estimated_credits: 8.7, available_credits: 100, source_duration_seconds: 9.2 };
   }
 
   async getSwitchActorTaskStatus() {

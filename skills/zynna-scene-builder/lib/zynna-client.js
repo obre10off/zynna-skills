@@ -87,6 +87,16 @@ class ZynnaOpenSkillsClient {
     return payload.data || {};
   }
 
+  async estimateSceneBuilderTask(taskBody, timeoutSec = 120) {
+    const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/scene-builder/tasks/estimate`, {
+      body: taskBody,
+      timeoutSec,
+    });
+
+    this.assertApiSuccess(payload, 'scene builder estimate');
+    return payload.data || {};
+  }
+
   async getSceneBuilderTaskStatus(taskId, timeoutSec = 60) {
     const payload = await this.requestJson(
       'GET',

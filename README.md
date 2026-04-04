@@ -7,8 +7,8 @@ Included skills:
 - `zynna-analyze-video`
 - `zynna-recreate-video`
 - `zynna-generate-video`
-- `zynna-scene-builder`
-- `zynna-switch-actor`
+- `zynna-scene-builder` (Story Scenes)
+- `zynna-switch-actor` (Character Swap)
 
 ## One-command install (skills.sh)
 
