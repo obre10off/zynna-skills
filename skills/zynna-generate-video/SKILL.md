@@ -27,6 +27,7 @@ metadata:
 ## Constraints
 - Platform: TikTok only.
 - Source APIs:
+- `POST /api/open/skills/tasks/estimate`
 - `POST /api/open/skills/tasks`
 - `GET /api/open/skills/tasks/status?task_id=...`
 - Always require confirmation before starting generation.
@@ -35,9 +36,10 @@ metadata:
 
 ## Workflow
 1. Confirm model/ratio/limitations with user.
-2. Submit task and persist initial result artifact.
-3. Poll until terminal status.
-4. Write:
+2. Estimate credits first; stop if estimate fails.
+3. Submit task and persist initial result artifact.
+4. Poll until terminal status.
+5. Write:
 - `outputs/result.json`
 - `outputs/result.md`
 5. Return final `video_url` when available.

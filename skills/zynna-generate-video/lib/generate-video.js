@@ -1,13 +1,27 @@
 const { artifactsForRun } = require('./artifacts');
 const { defaultClient } = require('./zynna-client');
 
-function buildGenerateResult({ runId, taskId, status, model = null, videoUrl = null, raw = null, error = null }) {
+function buildGenerateResult({
+  runId,
+  taskId,
+  status,
+  model = null,
+  videoUrl = null,
+  estimatedCredits = null,
+  chargedCredits = null,
+  creditsRefunded = false,
+  raw = null,
+  error = null,
+}) {
   return {
     run_id: runId,
     task_id: taskId ? String(taskId) : null,
     status,
     model,
     video_url: videoUrl,
+    estimated_credits: estimatedCredits,
+    charged_credits: chargedCredits,
+    credits_refunded: creditsRefunded,
     raw,
     error,
   };
@@ -25,6 +39,9 @@ function persistGenerateArtifacts(artifacts, result, title = 'Video Generate Res
       `- status: \`${result.status}\``,
       `- task_id: \`${result.task_id || '(missing)'}\``,
       `- video_url: ${result.video_url || '(missing)'}`,
+      `- estimated_credits: ${result.estimated_credits == null ? '(unknown)' : result.estimated_credits}`,
+      `- charged_credits: ${result.charged_credits == null ? '(unknown)' : result.charged_credits}`,
+      `- credits_refunded: ${result.credits_refunded ? 'yes' : 'no'}`,
       `- error: ${result.error && result.error.message ? result.error.message : '(none)'}`,
       '',
     ].join('\n'),
@@ -78,6 +95,8 @@ async function runGenerateVideoStatus({
     raw.error && typeof raw.error === 'object'
       ? { message: raw.error.message || String(raw.error) }
       : null;
+  const chargedCredits = raw.credits_used ?? null;
+  const creditsRefunded = Boolean(raw.credits_refunded);
 
   const result = buildGenerateResult({
     runId,
@@ -85,6 +104,8 @@ async function runGenerateVideoStatus({
     status,
     model,
     videoUrl,
+    chargedCredits,
+    creditsRefunded,
     raw,
     error,
   });
@@ -115,6 +136,19 @@ async function runGenerateVideo({
   const artifacts = artifactsForRun(skillDir, runId);
   artifacts.ensure();
 
+  const estimate = await client.estimateTask(prompt, ratio, model);
+  const estimatedCredits = estimate.estimated_credits;
+  if (typeof estimatedCredits !== 'number' || estimatedCredits <= 0) {
+    throw new Error(`Estimate failed or invalid estimated_credits: ${JSON.stringify(estimate)}`);
+  }
+
+  artifacts.writeJson('input/request.json', {
+    prompt,
+    ratio,
+    model,
+    estimate,
+  });
+
   const submit = await client.submitTask(prompt, ratio, model);
   const taskId = submit.task_id;
   if (!taskId) {
@@ -126,6 +160,8 @@ async function runGenerateVideo({
     taskId: String(taskId),
     status: String(submit.status || 'submitted'),
     model,
+    estimatedCredits,
+    chargedCredits: submit.credits_used ?? null,
     raw: { submit },
   });
   persistGenerateArtifacts(artifacts, initial);
@@ -142,6 +178,9 @@ async function runGenerateVideo({
       status,
       model,
       videoUrl,
+      estimatedCredits,
+      chargedCredits: raw.credits_used ?? submit.credits_used ?? null,
+      creditsRefunded: Boolean(raw.credits_refunded),
       raw: { submit, status: raw },
       error:
         raw.error && typeof raw.error === 'object'
@@ -165,6 +204,8 @@ async function runGenerateVideo({
       taskId: String(taskId),
       status: String(submit.status || 'submitted'),
       model,
+      estimatedCredits,
+      chargedCredits: submit.credits_used ?? null,
       raw: { submit },
       error: { message: error instanceof Error ? error.message : String(error) },
     });

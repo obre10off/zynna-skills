@@ -1,7 +1,7 @@
 ---
 name: zynna-scene-builder
 version: "1.0.0"
-description: Build multi-scene UGC/TikTok videos by submitting scene projects to Zynna Open Skills API, optionally running full generation and returning final stitched output URL.
+description: Story Scenes: build multi-scene UGC/TikTok videos by submitting scene projects to Zynna Open Skills API, optionally running full generation and returning final stitched output URL.
 license: Internal
 compatibility: "Codex, Claude Code, OpenClaw-compatible skill runners. Requires network access to Zynna API."
 metadata:
@@ -25,19 +25,23 @@ metadata:
 
 # zynna-scene-builder
 
+UI Label: Story Scenes
+
 ## Constraints
 - Platform target: TikTok style output.
 - Source APIs:
+- `POST /api/open/skills/scene-builder/tasks/estimate`
 - `POST /api/open/skills/scene-builder/tasks`
 - `GET /api/open/skills/scene-builder/tasks/status?task_id=...`
 - Use deterministic artifacts and persist task IDs for recovery.
 
 ## Workflow
 1. Collect project name and ordered scenes.
-2. Submit scene-builder task.
-3. Persist `task_id` immediately.
-4. Poll status until terminal state when generation is requested.
-5. Write:
+2. Estimate credits first; stop if estimate fails.
+3. Submit scene-builder task.
+4. Persist `task_id` immediately.
+5. Poll status until terminal state when generation is requested.
+6. Write:
 - `outputs/result.json`
 - `outputs/result.md`
 

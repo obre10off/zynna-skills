@@ -6,6 +6,14 @@ const { runSwitchActor, runSwitchActorStatus } = require('../lib/switch-actor');
 
 const SKILL_ROOT = path.resolve(__dirname, '..');
 
+function parsePositiveNumber(name, value, { min, max }) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) {
+    throw new Error(`Invalid ${name}. Expected a number in range [${min}, ${max}].`);
+  }
+  return num;
+}
+
 function parseArgs(argv) {
   const args = {
     aspectRatio: '9:16',
@@ -36,8 +44,8 @@ function parseArgs(argv) {
     if (key === '--prompt') args.prompt = value;
     if (key === '--aspect_ratio') args.aspectRatio = value;
     if (key === '--resolution') args.resolution = value;
-    if (key === '--poll_interval') args.pollInterval = Number(value);
-    if (key === '--timeout_sec') args.timeoutSec = Number(value);
+    if (key === '--poll_interval') args.pollInterval = parsePositiveNumber('--poll_interval', value, { min: 0.1, max: 3600 });
+    if (key === '--timeout_sec') args.timeoutSec = parsePositiveNumber('--timeout_sec', value, { min: 1, max: 86400 });
 
     if (key.startsWith('--')) {
       i += 1;
@@ -48,13 +56,13 @@ function parseArgs(argv) {
 }
 
 async function confirmRun(args) {
-  console.log('About to start Switch Actor via Zynna Open Skills.');
+  console.log('About to start Character Swap via Zynna Open Skills.');
   console.log(`- aspect_ratio: ${args.aspectRatio}`);
   console.log(`- resolution: ${args.resolution}`);
   console.log(`- actor_name: ${args.actorName || '(none)'}`);
   const rl = readline.createInterface({ input: stdin, output: stdout });
   try {
-    const answer = (await rl.question('Confirm to start switch-actor? (yes/no): ')).trim().toLowerCase();
+    const answer = (await rl.question('Confirm to start Character Swap? (yes/no): ')).trim().toLowerCase();
     return answer === 'y' || answer === 'yes';
   } finally {
     rl.close();

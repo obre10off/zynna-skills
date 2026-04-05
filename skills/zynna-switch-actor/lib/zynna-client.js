@@ -1,5 +1,33 @@
 const { getZynnaConfig } = require('./config');
 
+function sanitizeUrlForLog(urlValue) {
+  try {
+    const parsed = new URL(urlValue);
+    for (const key of ['token', 'device_code', 'api_key', 'open_skills_api_key', 'authorization']) {
+      if (parsed.searchParams.has(key)) {
+        parsed.searchParams.set(key, '[REDACTED]');
+      }
+    }
+    return `${parsed.origin}${parsed.pathname}${parsed.search}`;
+  } catch {
+    return '(invalid-url)';
+  }
+}
+
+function redactSensitiveText(input) {
+  const text = String(input || '');
+  return text
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]+/gi, '$1[REDACTED]')
+    .replace(/((?:token|device_code|api_key|open_skills_api_key|authorization)\s*["'=:\s]+)([^"\s,}&]+)/gi, '$1[REDACTED]');
+}
+
+function summarizeApiPayload(payload) {
+  if (!payload || typeof payload !== 'object') return '(empty payload)';
+  const code = Object.prototype.hasOwnProperty.call(payload, 'code') ? String(payload.code) : 'unknown';
+  const message = redactSensitiveText(payload.message || payload.msg || '').slice(0, 200);
+  return message ? `code=${code}, message=${message}` : `code=${code}`;
+}
+
 class ZynnaOpenSkillsClient {
   constructor(cfg) {
     this.cfg = cfg;
@@ -22,15 +50,18 @@ class ZynnaOpenSkillsClient {
       });
 
       const text = await response.text();
+      const safeBody = redactSensitiveText(text).slice(0, 500);
+      const safeUrl = sanitizeUrlForLog(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} calling ${safeUrl}. Body: ${safeBody}`);
+      }
+
       let payload;
       try {
         payload = JSON.parse(text);
       } catch (error) {
-        throw new Error(`Invalid JSON response: ${error}\nBody: ${text.slice(0, 500)}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} calling ${url}. Body: ${text.slice(0, 500)}`);
+        throw new Error(`Invalid JSON response from ${safeUrl}: ${error}. Body: ${safeBody}`);
       }
 
       return payload;
@@ -39,16 +70,30 @@ class ZynnaOpenSkillsClient {
     }
   }
 
+  assertApiSuccess(payload, context) {
+    if (payload && payload.code === 0) {
+      return;
+    }
+    throw new Error(`Zynna ${context} failed: ${summarizeApiPayload(payload)}`);
+  }
+
   async submitSwitchActorTask(taskBody, timeoutSec = 120) {
     const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/switch-actor/tasks`, {
       body: taskBody,
       timeoutSec,
     });
 
-    if (payload.code !== 0) {
-      throw new Error(`Zynna switch actor submit failed: ${JSON.stringify(payload)}`);
-    }
+    this.assertApiSuccess(payload, 'switch actor submit');
+    return payload.data || {};
+  }
 
+  async estimateSwitchActorTask(taskBody, timeoutSec = 120) {
+    const payload = await this.requestJson('POST', `${this.cfg.baseUrl}/api/open/skills/switch-actor/tasks/estimate`, {
+      body: taskBody,
+      timeoutSec,
+    });
+
+    this.assertApiSuccess(payload, 'switch actor estimate');
     return payload.data || {};
   }
 
@@ -59,10 +104,7 @@ class ZynnaOpenSkillsClient {
       { timeoutSec }
     );
 
-    if (payload.code !== 0) {
-      throw new Error(`Zynna switch actor status failed: ${JSON.stringify(payload)}`);
-    }
-
+    this.assertApiSuccess(payload, 'switch actor status');
     return payload.data || {};
   }
 }

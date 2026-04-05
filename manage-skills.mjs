@@ -8,6 +8,7 @@ const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname));
 const SKILLS_ROOT = path.join(REPO_ROOT, 'skills');
 const DIST_DIR = path.join(REPO_ROOT, 'dist', 'skills');
 const SKILL_DIRS = [
+  'zynna-auth',
   'zynna-analyze-video',
   'zynna-recreate-video',
   'zynna-generate-video',

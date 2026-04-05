@@ -6,6 +6,14 @@ const { runGenerateVideo, runGenerateVideoStatus } = require('../lib/generate-vi
 
 const SKILL_ROOT = path.resolve(__dirname, '..');
 
+function parsePositiveNumber(name, value, { min, max }) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) {
+    throw new Error(`Invalid ${name}. Expected a number in range [${min}, ${max}].`);
+  }
+  return num;
+}
+
 function parseArgs(argv) {
   const args = {
     ratio: '9:16',
@@ -32,8 +40,8 @@ function parseArgs(argv) {
     if (key === '--ratio') args.ratio = value;
     if (key === '--model') args.model = value;
     if (key === '--run_id') args.runId = value;
-    if (key === '--timeout_sec') args.timeoutSec = Number(value);
-    if (key === '--poll_interval') args.pollInterval = Number(value);
+    if (key === '--timeout_sec') args.timeoutSec = parsePositiveNumber('--timeout_sec', value, { min: 1, max: 86400 });
+    if (key === '--poll_interval') args.pollInterval = parsePositiveNumber('--poll_interval', value, { min: 0.1, max: 3600 });
     if (key.startsWith('--')) {
       i += 1;
     }
