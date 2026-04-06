@@ -55,4 +55,5 @@ Plan-gating defaults:
 
 ```bash
 node skills/tests/e2e_smoke.cjs
+node skills/tests/discovery_check.cjs
 ```

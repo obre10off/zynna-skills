@@ -1,7 +1,7 @@
 ---
 name: zynna-scene-builder
 version: "1.0.0"
-description: Story Scenes: build multi-scene UGC/TikTok videos by submitting scene projects to Zynna Open Skills API, optionally running full generation and returning final stitched output URL.
+description: "Story Scenes: build multi-scene UGC/TikTok videos by submitting scene projects to Zynna Open Skills API, optionally running full generation and returning final stitched output URL."
 license: Internal
 compatibility: "Codex, Claude Code, OpenClaw-compatible skill runners. Requires network access to Zynna API."
 metadata:

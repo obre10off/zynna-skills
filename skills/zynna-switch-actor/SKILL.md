@@ -1,7 +1,7 @@
 ---
 name: zynna-switch-actor
 version: "1.0.0"
-description: Character Swap: replace an actor in a source video while preserving motion/timing by submitting a switch-actor task to Zynna Open Skills API and polling for the final output URL.
+description: "Character Swap: replace an actor in a source video while preserving motion/timing by submitting a switch-actor task to Zynna Open Skills API and polling for the final output URL."
 license: Internal
 compatibility: "Codex, Claude Code, OpenClaw-compatible skill runners. Requires network access to Zynna API."
 metadata:
