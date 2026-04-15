@@ -3,5 +3,36 @@
 node_modules/
 dist/
 notes.txt
+skills-lock.json
 
 .playwright-mcp
+
+# Local agent/tool state directories
+/.adal/
+/.agents/
+/.augment/
+/.claude/
+/.codebuddy/
+/.commandcode/
+/.continue/
+/.crush/
+/.factory/
+/.goose/
+/.iflow/
+/.junie/
+/.kilocode/
+/.kiro/
+/.kode/
+/.mcpjam/
+/.mux/
+/.neovate/
+/.openhands/
+/.pi/
+/.pochi/
+/.qoder/
+/.qwen/
+/.roo/
+/.trae/
+/.vibe/
+/.windsurf/
+/.zencoder/
