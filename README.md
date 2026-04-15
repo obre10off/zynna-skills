@@ -22,16 +22,6 @@ npx skills add obre10off/zynna-skills
 node manage-skills.mjs update
 ```
 
-## Required environment
-
-```bash
-export ZYNNA_BASE_URL="http://localhost:8080"
-```
-
-Security defaults:
-- Non-local `http://` URLs are blocked by default.
-- For explicit insecure override (non-prod only): `ZYNNA_ALLOW_INSECURE_HTTP=1`
-
 ## Authentication
 
 You can authenticate once and reuse saved credentials across all skills:

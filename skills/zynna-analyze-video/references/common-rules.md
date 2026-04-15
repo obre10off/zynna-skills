@@ -11,5 +11,4 @@ Use these rules across Zynna skills unless a specific skill overrides them.
 - Explain the API key is missing/invalid.
 - Tell user to run `node skills/zynna-auth/scripts/auth.js login` or set `ZYNNA_SKILLS_API_KEY`.
 - Mention API access requires eligible plan (`business` by default).
-- Mention optional `ZYNNA_BASE_URL` for non-local deployments.
 - Keep error guidance practical and brief.
