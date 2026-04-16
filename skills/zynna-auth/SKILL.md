@@ -1,7 +1,7 @@
 ---
 name: zynna-auth
 version: "1.0.0"
-description: Authenticate Zynna Skills via device login, store local credentials, and enforce API-access plan eligibility (business by default).
+description: Authenticate Zynna Skills via device login, store local credentials, and enforce API-access plan eligibility (all paid plans by default).
 license: Internal
 compatibility: "Codex, Claude Code, OpenClaw-compatible skill runners. Requires network access to Zynna auth API."
 metadata:
@@ -27,7 +27,7 @@ metadata:
 ## Purpose
 - Run device-login flow for Zynna Skills.
 - Save credentials into `~/.zynna/credentials.json`.
-- Enforce plan-gating for API access (`business` by default).
+- Enforce plan-gating for API access (all paid plans by default).
 
 ## Commands
 - `node scripts/auth.js login`
@@ -46,5 +46,5 @@ These can be overridden via env:
 - `ZYNNA_DEVICE_TOKEN_PATH`
 
 ## Plan Gating
-- Accepted plans come from `ZYNNA_ALLOWED_API_PLANS` (default: `business`).
+- Accepted plans come from `ZYNNA_ALLOWED_API_PLANS` (default: any paid plan).
 - Plan check can be bypassed only for dev via `ZYNNA_AUTH_SKIP_PLAN_CHECK=1`.

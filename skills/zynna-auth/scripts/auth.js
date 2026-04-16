@@ -197,10 +197,11 @@ function firstNonEmpty(values) {
 }
 
 function getAllowedPlans() {
-  const raw = process.env.ZYNNA_ALLOWED_API_PLANS || 'business';
+  const raw = String(process.env.ZYNNA_ALLOWED_API_PLANS || '').trim();
+  if (!raw) return [];
   return raw
     .split(',')
-    .map((v) => v.trim().toLowerCase())
+    .map((v) => normalizePlan(v))
     .filter(Boolean);
 }
 
@@ -208,6 +209,12 @@ function normalizePlan(value) {
   return String(value || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '');
+}
+
+function isPaidPlan(normalizedPlan) {
+  if (!normalizedPlan) return false;
+  const freeLike = ['free', 'trial', 'none', 'unknown', 'noplan'];
+  return !freeLike.some((marker) => normalizedPlan.includes(marker));
 }
 
 function collectPlanCandidates(payload) {
@@ -232,18 +239,29 @@ function isAllowedPlan(payload) {
   if (String(process.env.ZYNNA_AUTH_SKIP_PLAN_CHECK || '') === '1') {
     return { ok: true, reason: 'Plan check bypassed by ZYNNA_AUTH_SKIP_PLAN_CHECK=1' };
   }
-  const allowed = getAllowedPlans().map(normalizePlan);
-  if (allowed.length === 0) {
-    return { ok: true, reason: 'No plan restrictions configured' };
-  }
+
+  const allowed = getAllowedPlans();
   const candidates = collectPlanCandidates(payload);
-  const ok = candidates.some((candidate) => allowed.includes(candidate));
-  if (ok) {
-    return { ok: true, reason: `Matched plan: ${candidates.find((c) => allowed.includes(c))}` };
+
+  if (allowed.length > 0) {
+    const ok = candidates.some((candidate) => allowed.includes(candidate));
+    if (ok) {
+      return { ok: true, reason: `Matched plan: ${candidates.find((c) => allowed.includes(c))}` };
+    }
+    return {
+      ok: false,
+      reason: `Your plan is not eligible for API access. Required: ${allowed.join(', ')}. Detected: ${candidates.join(', ') || '(none)'}`,
+    };
   }
+
+  const paidMatch = candidates.find((candidate) => isPaidPlan(candidate));
+  if (paidMatch) {
+    return { ok: true, reason: `Matched paid plan: ${paidMatch}` };
+  }
+
   return {
     ok: false,
-    reason: `Your plan is not eligible for API access. Required: ${allowed.join(', ')}. Detected: ${candidates.join(', ') || '(none)'}`,
+    reason: `Your plan is not eligible for API access. Required: paid plan. Detected: ${candidates.join(', ') || '(none)'}`,
   };
 }
 

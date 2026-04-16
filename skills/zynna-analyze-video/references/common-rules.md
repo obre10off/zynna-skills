@@ -10,5 +10,5 @@ Use these rules across Zynna skills unless a specific skill overrides them.
 ## 401 Unauthorized
 - Explain the API key is missing/invalid.
 - Tell user to run `node skills/zynna-auth/scripts/auth.js login` or set `ZYNNA_SKILLS_API_KEY`.
-- Mention API access requires eligible plan (`business` by default).
+- Mention API access requires an eligible paid plan by default.
 - Keep error guidance practical and brief.
