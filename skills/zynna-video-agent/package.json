@@ -1,0 +1,8 @@
+{
+  "name": "zynna-skill-runtime",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Runtime helpers for zynna-video-agent skill",
+  "license": "UNLICENSED"
+}
+

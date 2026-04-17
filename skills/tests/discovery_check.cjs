@@ -10,6 +10,7 @@ const EXPECTED_SKILLS = [
   'zynna-generate-video',
   'zynna-scene-builder',
   'zynna-switch-actor',
+  'zynna-video-agent',
 ];
 
 function stripAnsi(input) {

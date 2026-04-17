@@ -14,6 +14,7 @@ const SKILL_DIRS = [
   'zynna-generate-video',
   'zynna-scene-builder',
   'zynna-switch-actor',
+  'zynna-video-agent',
 ];
 const INSTALL_DIRS = [
   path.join(os.homedir(), '.codex', 'skills'),
