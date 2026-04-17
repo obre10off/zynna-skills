@@ -9,6 +9,7 @@ Included skills:
 - `zynna-generate-video`
 - `zynna-scene-builder` (Story Scenes)
 - `zynna-switch-actor` (Character Swap)
+- `zynna-video-agent` (OpenMontage-style pipeline agent)
 
 ## One-command install (skills.sh)
 
@@ -37,7 +38,7 @@ Credential lookup order used by runtime skills:
 Credential files are stored with restrictive local permissions (`~/.zynna` and auth files).
 
 Plan-gating defaults:
-- API access requires `business` plan by default
+- API access requires an active paid plan by default
 - Override accepted plans with `ZYNNA_ALLOWED_API_PLANS` (comma-separated)
 - Dev bypass only: `ZYNNA_AUTH_SKIP_PLAN_CHECK=1`
 

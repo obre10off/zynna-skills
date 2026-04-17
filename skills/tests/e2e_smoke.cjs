@@ -11,13 +11,16 @@ const RECREATE_SKILL_DIR = path.join(SKILLS_ROOT, 'zynna-recreate-video');
 const GENERATE_SKILL_DIR = path.join(SKILLS_ROOT, 'zynna-generate-video');
 const SCENE_BUILDER_SKILL_DIR = path.join(SKILLS_ROOT, 'zynna-scene-builder');
 const SWITCH_ACTOR_SKILL_DIR = path.join(SKILLS_ROOT, 'zynna-switch-actor');
+const VIDEO_AGENT_SKILL_DIR = path.join(SKILLS_ROOT, 'zynna-video-agent');
 
 const { runAnalyzeVideo } = require('../zynna-analyze-video/lib/analyze-video');
 const { runRecreateVideo } = require('../zynna-recreate-video/lib/recreate-video');
 const { runGenerateVideo, runGenerateVideoStatus } = require('../zynna-generate-video/lib/generate-video');
 const { runSceneBuilder, runSceneBuilderStatus } = require('../zynna-scene-builder/lib/scene-builder');
 const { runSwitchActor, runSwitchActorStatus } = require('../zynna-switch-actor/lib/switch-actor');
+const { runVideoAgent, runVideoAgentStatus } = require('../zynna-video-agent/lib/video-agent');
 const { artifactsForRun } = require('../zynna-analyze-video/lib/artifacts');
+const { artifactsForRun: videoAgentArtifactsForRun } = require('../zynna-video-agent/lib/artifacts');
 const { getZynnaConfig } = require('../zynna-analyze-video/lib/config');
 
 class FakeClient {
@@ -46,15 +49,40 @@ class FakeClient {
     };
   }
 
-  async submitTask() {
+  async submitTask(params = {}) {
+    if (params.pipeline_id) {
+      return {
+        task_id: 'video_agent_task_1',
+        status: 'queued',
+        stage: 'assets',
+        pipeline_id: params.pipeline_id,
+        model: params.model || 'veo-3.1',
+        estimated_credits: 12,
+      };
+    }
     return { task_id: 'task_123', status: 'queued' };
   }
 
-  async estimateTask() {
+  async estimateTask(params = {}) {
+    if (params.pipeline_id) {
+      return { estimated_credits: 12, available_credits: 100, pipeline_id: params.pipeline_id };
+    }
     return { estimated_credits: 4.2, available_credits: 100 };
   }
 
-  async getTaskStatus() {
+  async getTaskStatus(taskId = 'task_123') {
+    if (taskId === 'video_agent_task_1') {
+      return {
+        task_id: 'video_agent_task_1',
+        status: 'succeeded',
+        stage: 'publish',
+        model: 'veo-3.1',
+        result: {
+          video_url: 'https://example.com/video-agent-output.mp4',
+          result_urls: ['https://example.com/video-agent-output.mp4'],
+        },
+      };
+    }
     return {
       task_id: 'task_123',
       status: 'succeeded',
@@ -228,10 +256,45 @@ test('zynna-switch-actor writes result and supports status lookup', async () => 
   cleanup([runDir, statusRunDir]);
 });
 
+test('zynna-video-agent writes result and supports status lookup', async () => {
+  const runDir = path.join(VIDEO_AGENT_SKILL_DIR, '.artifacts', 'smoke-video-agent');
+  const statusRunDir = path.join(VIDEO_AGENT_SKILL_DIR, '.artifacts', 'smoke-video-agent-status');
+  cleanup([runDir, statusRunDir]);
+
+  const result = await runVideoAgent({
+    runId: 'smoke-video-agent',
+    skillDir: VIDEO_AGENT_SKILL_DIR,
+    prompt: 'Create a short explainer video',
+    pipelineId: 'animated-explainer',
+    client: new FakeClient(),
+    pollInterval: 0.01,
+    timeoutSec: 1,
+  });
+
+  assert.equal(result.status, 'succeeded');
+  assert.equal(result.videoUrl, 'https://example.com/video-agent-output.mp4');
+
+  const statusResult = await runVideoAgentStatus({
+    runId: 'smoke-video-agent-status',
+    taskId: 'video_agent_task_1',
+    pipelineId: 'animated-explainer',
+    skillDir: VIDEO_AGENT_SKILL_DIR,
+    client: new FakeClient(),
+  });
+
+  assert.equal(statusResult.status, 'succeeded');
+  assert.equal(statusResult.videoUrl, 'https://example.com/video-agent-output.mp4');
+  cleanup([runDir, statusRunDir]);
+});
+
 test('artifact helper rejects unsafe run_id traversal', () => {
   assert.throws(
     () => artifactsForRun(ANALYZE_SKILL_DIR, '../escape'),
     /Invalid run_id/
+  );
+  assert.throws(
+    () => videoAgentArtifactsForRun(VIDEO_AGENT_SKILL_DIR, '../escape'),
+    /Invalid run_id|Unsafe run path escaped artifacts root/
   );
 });
 
