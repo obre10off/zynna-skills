@@ -9,7 +9,9 @@ Included skills:
 - `zynna-generate-video`
 - `zynna-scene-builder` (Story Scenes)
 - `zynna-switch-actor` (Character Swap)
-- `zynna-video-agent` (OpenMontage-style pipeline agent)
+- `zynna-video-agent` (Pipeline agent)
+- `zynna-meta-ads-generate` (Meta Ads creative generation)
+- `zynna-meta-ads-track` (Meta Ads tracking)
 
 ## One-command install (skills.sh)
 
